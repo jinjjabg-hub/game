@@ -21,29 +21,29 @@
   #wins div { padding: 4px 0; border-bottom: 1px solid var(--line); }
   main { display: flex; flex-direction: column; min-height: 80vh; }
   #top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-  #prize { font-size: 28px; font-weight: 900; flex: 1; }
+  #prize { font-size: 28px; font-weight: 900; }
   #arena { flex: 1; position: relative; display: grid; place-items: center; overflow: hidden; min-height: 420px; }
   #winner { position: absolute; inset: 0; background: rgba(255, 248, 236, .94); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; z-index: 5; }
   #winner.on { display: flex; }
   #winner .who { font-size: clamp(48px, 9vw, 120px); font-weight: 900; color: var(--red); line-height: 1.1; }
   .roll { font-size: clamp(48px, 9vw, 120px); font-weight: 900; }
-  .lane { position: relative; height: 46px; border-bottom: 2px dashed var(--line); width: 100%; }
-  .lane span { position: absolute; left: 0; top: 4px; white-space: nowrap; font-weight: 800; font-size: 20px; }
+  .lane { position: relative; height: var(--h, 46px); border-bottom: 2px dashed var(--line); width: 100%; }
+  .lane span { position: absolute; left: 0; top: 0; line-height: var(--h, 46px); white-space: nowrap; font-weight: 800; font-size: calc(var(--h, 46px) * .68); }
   #race { width: 100%; padding-right: 150px; border-right: 6px solid var(--red); }
-  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
-  .cardx { aspect-ratio: 3/2; border-radius: 16px; border: 2px solid var(--ink); background: var(--ink); color: #fff; font-size: 34px; font-weight: 900; display: grid; place-items: center; transition: transform .3s; padding: 6px; text-align: center; }
-  .cardx.open { background: var(--card); color: var(--soft); font-size: 18px; transform: rotateY(360deg); }
-  .cardx.hit { background: #ffe9a8; color: var(--red); font-size: 26px; }
+  .cards { display: grid; grid-template-columns: repeat(var(--k, 4), 1fr); gap: 10px; width: 100%; }
+  .cardx { aspect-ratio: 3/2; border-radius: 16px; border: 2px solid var(--ink); background: var(--ink); color: #fff; font-size: clamp(16px, calc(150px / var(--k, 4)), 34px); font-weight: 900; display: grid; place-items: center; transition: transform .3s; padding: 6px; text-align: center; }
+  .cardx.open { background: var(--card); color: var(--soft); font-size: clamp(11px, calc(90px / var(--k, 4)), 18px); transform: rotateY(360deg); }
+  .cardx.hit { background: #ffe9a8; color: var(--red); font-size: clamp(13px, calc(120px / var(--k, 4)), 26px); }
   .slot { height: 270px; overflow: hidden; border: 4px solid var(--ink); border-radius: 20px; width: min(560px, 100%); position: relative; background: #fff; }
   .slot::after { content: ""; position: absolute; left: 0; right: 0; top: 90px; height: 90px; border-block: 4px solid var(--red); background: rgba(242, 169, 0, .18); pointer-events: none; }
   .strip div { height: 90px; line-height: 90px; font-size: 44px; font-weight: 900; text-align: center; white-space: nowrap; overflow: hidden; }
-  .bal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
-  .bal .b { text-align: center; font-weight: 800; font-size: 18px; transition: opacity .4s, transform .4s; }
-  .bal .b span { display: block; font-size: 54px; line-height: 1.1; }
+  .bal { display: grid; grid-template-columns: repeat(var(--k, 4), 1fr); gap: 8px; width: 100%; }
+  .bal .b { text-align: center; font-weight: 800; font-size: clamp(12px, calc(110px / var(--k, 4)), 18px); white-space: nowrap; transition: opacity .4s, transform .4s; }
+  .bal .b span { display: block; font-size: clamp(24px, calc(300px / var(--k, 4)), 54px); line-height: 1.1; }
   .bal .b.pop { opacity: .18; transform: scale(.8); }
   .bal .b.hit { transform: scale(1.35); color: var(--red); }
-  .stage { background: #111827; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; }
-  .stage .s { color: #3b4458; font-weight: 900; font-size: 22px; padding: 16px 4px; text-align: center; border-radius: 12px; overflow: hidden; white-space: nowrap; }
+  .stage { background: #111827; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: repeat(var(--k, 5), 1fr); gap: 8px; width: 100%; }
+  .stage .s { color: #3b4458; font-weight: 900; font-size: clamp(13px, calc(130px / var(--k, 5)), 22px); padding: 12px 2px; text-align: center; border-radius: 12px; overflow: hidden; white-space: nowrap; }
   .stage .s.lit { color: #111; background: radial-gradient(#fff6c9, #f2a900); box-shadow: 0 0 40px #f2a900; }
 </style>
 </head>
@@ -66,7 +66,7 @@
     <div id="wins" class="muted">아직 없어요</div>
   </aside>
   <main>
-    <div id="top"><div id="prize"></div><button class="btn red" id="go">추첨 시작 (Space)</button></div>
+    <div id="top"><div style="flex:1"><div id="prize"></div><div id="note" class="muted" style="font-size:14px;font-weight:700"></div></div><button class="btn red" id="go">추첨 시작 (Space)</button></div>
     <div id="arena" class="card">
       <div id="play" style="width:100%;display:grid;place-items:center"><p class="muted">참가자를 넣고 추첨 시작을 눌러 주세요</p></div>
       <div id="winner">
@@ -118,7 +118,9 @@ function refresh() {
 }
 
 // 화면에 함께 등장할 사람들: 당첨자 + 무작위 들러리 (섞어서)
+const cols = (n, ratio) => Math.max(2, Math.ceil(Math.sqrt(n * ratio))); // 인원수에 맞는 한 줄 칸 수
 function cast(winner, p, n) {
+  if (p.length > n) $("note").textContent = `추첨 대상은 ${p.length}명 전원 · 화면에는 당첨자를 포함한 ${n}명만 보여요`;
   const others = p.filter((x) => x !== winner);
   for (let i = others.length - 1; i > 0; i--) { const j = rnd(i + 1); [others[i], others[j]] = [others[j], others[i]]; }
   const list = others.slice(0, n - 1);
@@ -135,8 +137,9 @@ const SHOWS = {
   },
   // 최대 8명이 달리고, 결승선에 먼저 닿는 사람이 당첨
   async race(winner, p) {
-    const runners = cast(winner, p, 8), icons = ["🏃", "🚴", "🏇", "🛼", "🏄", "🚣", "⛷️", "🏊"];
-    play.innerHTML = `<div id="race">${runners.map((n, i) => `<div class="lane"><span>${icons[i]} ${esc(n)}</span></div>`).join("")}</div>`;
+    const runners = cast(winner, p, 40), icons = ["🏃", "🚴", "🏇", "🛼", "🏄", "🚣", "⛷️", "🏊"];
+    const h = Math.max(14, Math.min(46, Math.floor(($("arena").clientHeight - 60) / runners.length))); // 인원이 많으면 줄 높이를 줄인다
+    play.innerHTML = `<div id="race" style="--h:${h}px">${runners.map((n, i) => `<div class="lane"><span>${icons[i % icons.length]} ${esc(n)}</span></div>`).join("")}</div>`;
     const els = [...play.querySelectorAll(".lane span")], W = $("race").clientWidth;
     const plan = runners.map((n) => ({ T: n === winner ? 5200 : 5600 + rnd(1800), k: 0.6 + rnd(90) / 100 })); // k가 달라 중간 순위가 계속 뒤바뀐다
     const t0 = performance.now();
@@ -149,7 +152,7 @@ const SHOWS = {
   },
   // 돌림판: 최대 24칸, 위쪽 화살표에 멈춘 칸이 당첨
   async wheel(winner, p) {
-    const seg = cast(winner, p, 24), n = seg.length, size = Math.min(play.clientWidth, 520);
+    const seg = cast(winner, p, 60), n = seg.length, size = Math.min(play.clientWidth, $("arena").clientHeight - 70, 640);
     play.innerHTML = `<div style="position:relative"><div style="position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:34px;z-index:2">🔻</div><canvas id="wh" width="${size}" height="${size}"></canvas></div>`;
     const cv = $("wh"), g = cv.getContext("2d"), R = size / 2, cols = ["#cf2030", "#1f6feb", "#17a589", "#f2a900", "#8e44ad", "#e67e22"];
     const a = (Math.PI * 2) / n;
@@ -160,7 +163,7 @@ const SHOWS = {
       seg.forEach((name, i) => {
         g.beginPath(); g.moveTo(R, R); g.arc(R, R, R - 4, rot + i * a, rot + (i + 1) * a); g.closePath();
         g.fillStyle = cols[i % cols.length]; g.fill();
-        g.save(); g.translate(R, R); g.rotate(rot + (i + 0.5) * a); g.fillStyle = "#fff"; g.font = `800 ${Math.max(11, Math.min(20, 260 / n))}px sans-serif`;
+        g.save(); g.translate(R, R); g.rotate(rot + (i + 0.5) * a); g.fillStyle = "#fff"; g.font = `800 ${Math.max(10, Math.min(20, 420 / n))}px sans-serif`;
         g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(name.slice(0, 8), R - 14, 0); g.restore();
       });
     }
@@ -173,8 +176,8 @@ const SHOWS = {
   },
   // 카드 12장 중 진행자가 한 장을 고르면 그 카드에서 당첨자가 나온다
   async cards(winner, p) {
-    const rest = cast(winner, p, 12).filter((x) => x !== winner);
-    play.innerHTML = `<div class="cards">${Array.from({ length: rest.length + 1 }, () => `<button class="cardx">?</button>`).join("")}</div>`;
+    const rest = cast(winner, p, 40).filter((x) => x !== winner);
+    play.innerHTML = `<div class="cards" style="--k:${cols(rest.length + 1, 1.6)}">${Array.from({ length: rest.length + 1 }, () => `<button class="cardx">?</button>`).join("")}</div>`;
     const cards = [...play.querySelectorAll(".cardx")];
     const picked = await new Promise((ok) => cards.forEach((c) => (c.onclick = () => ok(c))));
     cards.forEach((c) => (c.onclick = null));
@@ -185,7 +188,7 @@ const SHOWS = {
   },
   // 사다리: 최대 8명. 🎁 칸에 도착하는 사람이 당첨 (당첨자가 도착하는 칸에 선물을 놓는다)
   async ladder(winner, p) {
-    const list = cast(winner, p, 8), n = list.length, R = 12, W = Math.min(play.clientWidth, 760), H = 440;
+    const list = cast(winner, p, 16), n = list.length, R = 12, W = Math.min(play.clientWidth, 1000), H = 440;
     play.innerHTML = `<canvas id="ld" width="${W}" height="${H}"></canvas>`;
     const g = $("ld").getContext("2d"), top = 56, bot = H - 56, cols = ["#cf2030", "#1f6feb", "#17a589", "#f2a900", "#8e44ad", "#e67e22", "#0e9aa7", "#d63384"];
     const x = (i) => (W * (i + 0.5)) / n, y = (r) => top + ((bot - top) * (r + 1)) / (R + 1);
@@ -207,8 +210,8 @@ const SHOWS = {
       for (let i = 0; i < n; i++) { g.moveTo(x(i), top); g.lineTo(x(i), bot); }
       rung.forEach((row, r) => row.forEach((on, i) => { if (on) { g.moveTo(x(i), y(r)); g.lineTo(x(i + 1), y(r)); } }));
       g.stroke();
-      g.textAlign = "center"; g.fillStyle = "#1b2440"; g.font = "800 18px sans-serif";
-      list.forEach((name, i) => g.fillText(name.slice(0, 7), x(i), top - 18));
+      g.textAlign = "center"; g.fillStyle = "#1b2440"; g.font = `800 ${n > 10 ? 13 : 18}px sans-serif`;
+      list.forEach((name, i) => g.fillText(name.slice(0, n > 10 ? 4 : 7), x(i), top - 18));
       g.font = "30px sans-serif";
       for (let i = 0; i < n; i++) g.fillText(i === goal ? "🎁" : "·", x(i), bot + 38);
       paths.forEach((pa, c) => { // 각자 자기 색 선으로 조금씩 내려온다
@@ -235,22 +238,22 @@ const SHOWS = {
   },
   // 풍선 서바이벌: 최대 16개 풍선이 하나씩 터지고 마지막까지 남은 풍선이 당첨
   async balloon(winner, p) {
-    const list = cast(winner, p, 16);
-    play.innerHTML = `<div class="bal">${list.map((n) => `<div class="b"><span>🎈</span>${esc(n)}</div>`).join("")}</div>`;
+    const list = cast(winner, p, 60);
+    play.innerHTML = `<div class="bal" style="--k:${cols(list.length, 1.8)}">${list.map((n) => `<div class="b"><span>🎈</span>${esc(n)}</div>`).join("")}</div>`;
     const els = [...play.querySelectorAll(".b")], alive = list.map((_, i) => i).filter((i) => list[i] !== winner);
     await sleep(600);
     while (alive.length) {
       const i = alive.splice(rnd(alive.length), 1)[0];
       els[i].classList.add("pop"); els[i].firstChild.textContent = "💥";
-      await sleep(alive.length > 2 ? 380 : 1000); // 마지막 세 개는 천천히
+      await sleep(alive.length > 2 ? Math.max(110, Math.min(380, 7000 / list.length)) : 1000); // 인원이 많으면 빨리 터뜨리고, 마지막 세 개는 천천히
     }
     els[list.indexOf(winner)].classList.add("hit");
     await sleep(1000);
   },
   // 스포트라이트: 어두운 무대에서 조명이 이름 사이를 옮겨 다니다 당첨자에게 멈춘다
   async spot(winner, p) {
-    const list = cast(winner, p, 20);
-    play.innerHTML = `<div class="stage">${list.map((n) => `<div class="s">${esc(n)}</div>`).join("")}</div>`;
+    const list = cast(winner, p, 60);
+    play.innerHTML = `<div class="stage" style="--k:${cols(list.length, 1.6)}">${list.map((n) => `<div class="s">${esc(n)}</div>`).join("")}</div>`;
     const els = [...play.querySelectorAll(".s")];
     let cur = -1;
     const light = (i) => { if (cur >= 0) els[cur].classList.remove("lit"); cur = i; els[i].classList.add("lit"); };
@@ -263,7 +266,7 @@ const SHOWS = {
   },
   // 공 추첨기: 통 안에서 공이 튀다가 당첨 공 하나가 가운데로 나와 커진다
   async lotto(winner, p) {
-    const list = cast(winner, p, 24), S = Math.min(play.clientWidth, 460), R = S / 2 - 8, br = Math.max(16, R / 7), cx = S / 2, cy = S / 2;
+    const list = cast(winner, p, 60), S = Math.min(play.clientWidth, $("arena").clientHeight - 50, 620), R = S / 2 - 8, br = Math.max(12, Math.min(R / 7, (R / Math.sqrt(list.length)) * 0.75)), cx = S / 2, cy = S / 2;
     play.innerHTML = `<canvas id="lt" width="${S}" height="${S}"></canvas>`;
     const g = $("lt").getContext("2d"), cols = ["#cf2030", "#1f6feb", "#17a589", "#f2a900", "#8e44ad", "#e67e22"];
     const balls = list.map((name, i) => ({ name, x: cx + rnd(120) - 60, y: cy + rnd(120) - 60, vx: (rnd(100) - 50) / 8, vy: (rnd(100) - 50) / 8, r: br, c: cols[i % cols.length] }));
@@ -299,6 +302,7 @@ async function go() {
   if (!p.length) return alert("추첨할 참가자가 없어요. 왼쪽에 이름이나 번호를 넣어 주세요.");
   busy = true; $("go").disabled = true;
   current = p[rnd(p.length)];
+  $("note").textContent = "";
   await SHOWS[mode](current, p);
   $("wprize").textContent = prizeNow() || `${wins.length + 1}번째 당첨`;
   $("who").textContent = current;

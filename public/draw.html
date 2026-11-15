@@ -13,8 +13,9 @@
   label { font-weight: 800; font-size: 14px; display: block; }
   textarea { width: 100%; padding: 10px; font: inherit; font-size: 14px; border: 2px solid var(--line); border-radius: 12px; resize: vertical; margin-top: 4px; }
   #names { min-height: 150px; } #prizes { min-height: 70px; }
-  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .modes button { border: 2px solid var(--ink); border-radius: 12px; padding: 10px 4px; font-weight: 800; background: var(--card); }
+  .modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .modes button { border: 2px solid var(--ink); border-radius: 12px; padding: 8px 2px; font-weight: 800; font-size: 13px; background: var(--card); line-height: 1.3; }
+  .modes button span { display: block; font-size: 22px; }
   .modes button.on { background: #ffe9a8; }
   #wins { font-size: 14px; max-height: 180px; overflow: auto; }
   #wins div { padding: 4px 0; border-bottom: 1px solid var(--line); }
@@ -33,6 +34,17 @@
   .cardx { aspect-ratio: 3/2; border-radius: 16px; border: 2px solid var(--ink); background: var(--ink); color: #fff; font-size: 34px; font-weight: 900; display: grid; place-items: center; transition: transform .3s; padding: 6px; text-align: center; }
   .cardx.open { background: var(--card); color: var(--soft); font-size: 18px; transform: rotateY(360deg); }
   .cardx.hit { background: #ffe9a8; color: var(--red); font-size: 26px; }
+  .slot { height: 270px; overflow: hidden; border: 4px solid var(--ink); border-radius: 20px; width: min(560px, 100%); position: relative; background: #fff; }
+  .slot::after { content: ""; position: absolute; left: 0; right: 0; top: 90px; height: 90px; border-block: 4px solid var(--red); background: rgba(242, 169, 0, .18); pointer-events: none; }
+  .strip div { height: 90px; line-height: 90px; font-size: 44px; font-weight: 900; text-align: center; white-space: nowrap; overflow: hidden; }
+  .bal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
+  .bal .b { text-align: center; font-weight: 800; font-size: 18px; transition: opacity .4s, transform .4s; }
+  .bal .b span { display: block; font-size: 54px; line-height: 1.1; }
+  .bal .b.pop { opacity: .18; transform: scale(.8); }
+  .bal .b.hit { transform: scale(1.35); color: var(--red); }
+  .stage { background: #111827; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; }
+  .stage .s { color: #3b4458; font-weight: 900; font-size: 22px; padding: 16px 4px; text-align: center; border-radius: 12px; overflow: hidden; white-space: nowrap; }
+  .stage .s.lit { color: #111; background: radial-gradient(#fff6c9, #f2a900); box-shadow: 0 0 40px #f2a900; }
 </style>
 </head>
 <body>
@@ -45,11 +57,12 @@
       <textarea id="prizes" placeholder="3등 커피 쿠폰&#10;2등 상품권&#10;1등 에어팟"></textarea></label>
     <label>추첨 방식</label>
     <div class="modes" id="modes">
-      <button data-m="roll" class="on">🎰 이름 룰렛</button><button data-m="race">🏃 달리기 경주</button>
-      <button data-m="wheel">🎡 돌림판</button><button data-m="cards">🃏 카드 뒤집기</button>
+      <button data-m="roll" class="on"><span>🔤</span>이름 룰렛</button><button data-m="race"><span>🏃</span>달리기 경주</button><button data-m="wheel"><span>🎡</span>돌림판</button>
+      <button data-m="cards"><span>🃏</span>카드 뒤집기</button><button data-m="ladder"><span>🪜</span>사다리</button><button data-m="slot"><span>🎰</span>슬롯</button>
+      <button data-m="balloon"><span>🎈</span>풍선 서바이벌</button><button data-m="spot"><span>🔦</span>스포트라이트</button><button data-m="lotto"><span>🔮</span>공 추첨기</button>
     </div>
     <div class="muted" id="left" style="font-size:14px;font-weight:700"></div>
-    <label>당첨자 <button class="btn line small" id="copy" style="float:right">📋 복사</button></label>
+    <label>당첨자 <button class="btn line small" id="copy" style="float:right">📋 복사</button><button class="btn line small" id="clear" style="float:right;margin-right:6px">↺ 기록 초기화</button></label>
     <div id="wins" class="muted">아직 없어요</div>
   </aside>
   <main>
@@ -72,8 +85,12 @@ const rnd = (n) => crypto.getRandomValues(new Uint32Array(1))[0] % n; // 당첨�
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 let mode = "roll", busy = false, current = null;
-let out = new Set();   // 당첨됐거나 자리에 없어 제외된 사람
-let wins = [];         // [{prize, name}]
+// 당첨 기록은 이 브라우저에 저장 → 추첨 도중 실수로 새로고침해도 사라지지 않는다
+const STATE = "hanpan_draw_state";
+const kept = JSON.parse(localStorage.getItem(STATE) || "{}");
+let out = new Set(kept.out || []);   // 당첨됐거나 자리에 없어 제외된 사람
+let wins = kept.wins || [];          // [{prize, name}]
+const keep = () => localStorage.setItem(STATE, JSON.stringify({ out: [...out], wins }));
 
 // 입력값은 이 브라우저에 저장 → 새로고침해도 유지
 for (const id of ["names", "prizes"]) {
@@ -166,6 +183,114 @@ const SHOWS = {
     cards.filter((c) => c !== picked).forEach((c, i) => { c.textContent = rest[i]; c.classList.add("open"); });
     await sleep(1200);
   },
+  // 사다리: 최대 8명. 🎁 칸에 도착하는 사람이 당첨 (당첨자가 도착하는 칸에 선물을 놓는다)
+  async ladder(winner, p) {
+    const list = cast(winner, p, 8), n = list.length, R = 12, W = Math.min(play.clientWidth, 760), H = 440;
+    play.innerHTML = `<canvas id="ld" width="${W}" height="${H}"></canvas>`;
+    const g = $("ld").getContext("2d"), top = 56, bot = H - 56, cols = ["#cf2030", "#1f6feb", "#17a589", "#f2a900", "#8e44ad", "#e67e22", "#0e9aa7", "#d63384"];
+    const x = (i) => (W * (i + 0.5)) / n, y = (r) => top + ((bot - top) * (r + 1)) / (R + 1);
+    const rung = Array.from({ length: R }, () => { const row = []; for (let i = 0; i < n - 1; i++) row.push(!row[i - 1] && rnd(2) === 1); return row; });
+    const paths = list.map((_, c) => {
+      const pts = [[x(c), top]]; let col = c;
+      for (let r = 0; r < R; r++) {
+        pts.push([x(col), y(r)]);
+        if (col < n - 1 && rung[r][col]) col++; else if (col > 0 && rung[r][col - 1]) col--;
+        pts.push([x(col), y(r)]);
+      }
+      pts.push([x(col), bot]);
+      return { pts, end: col, len: pts.reduce((a, q, i) => (i ? a + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0), 0) };
+    });
+    const goal = paths[list.indexOf(winner)].end, t0 = performance.now(), D = 5000;
+    function paint(f) {
+      g.clearRect(0, 0, W, H); g.lineCap = "round"; g.lineJoin = "round";
+      g.strokeStyle = "#d9cfba"; g.lineWidth = 4; g.beginPath();
+      for (let i = 0; i < n; i++) { g.moveTo(x(i), top); g.lineTo(x(i), bot); }
+      rung.forEach((row, r) => row.forEach((on, i) => { if (on) { g.moveTo(x(i), y(r)); g.lineTo(x(i + 1), y(r)); } }));
+      g.stroke();
+      g.textAlign = "center"; g.fillStyle = "#1b2440"; g.font = "800 18px sans-serif";
+      list.forEach((name, i) => g.fillText(name.slice(0, 7), x(i), top - 18));
+      g.font = "30px sans-serif";
+      for (let i = 0; i < n; i++) g.fillText(i === goal ? "🎁" : "·", x(i), bot + 38);
+      paths.forEach((pa, c) => { // 각자 자기 색 선으로 조금씩 내려온다
+        let left = pa.len * f;
+        g.strokeStyle = cols[c % cols.length]; g.lineWidth = 6; g.beginPath(); g.moveTo(pa.pts[0][0], pa.pts[0][1]);
+        for (let i = 1; i < pa.pts.length && left > 0; i++) {
+          const [ax, ay] = pa.pts[i - 1], [bx, by] = pa.pts[i], d = Math.hypot(bx - ax, by - ay), k = d ? Math.min(1, left / d) : 1;
+          g.lineTo(ax + (bx - ax) * k, ay + (by - ay) * k); left -= d;
+        }
+        g.stroke();
+      });
+    }
+    await new Promise((done) => (function f(t) { const k = Math.min(1, (t - t0) / D); paint(k); k < 1 ? requestAnimationFrame(f) : done(); })(t0));
+    await sleep(900);
+  },
+  // 슬롯: 이름 띠가 세로로 돌다가 가운데 칸에 당첨자가 멈춘다
+  async slot(winner, p) {
+    const N = 30, list = Array.from({ length: N + 3 }, (_, i) => (i === N ? winner : p[rnd(p.length)]));
+    play.innerHTML = `<div class="slot"><div class="strip" id="strip">${list.map((n) => `<div>${esc(n)}</div>`).join("")}</div></div>`;
+    await sleep(60);
+    $("strip").style.transition = "transform 5s cubic-bezier(.12,.6,.1,1)";
+    $("strip").style.transform = `translateY(${-(N - 1) * 90}px)`; // 가운데 칸(두 번째 줄)에 N번째가 오도록
+    await sleep(5700);
+  },
+  // 풍선 서바이벌: 최대 16개 풍선이 하나씩 터지고 마지막까지 남은 풍선이 당첨
+  async balloon(winner, p) {
+    const list = cast(winner, p, 16);
+    play.innerHTML = `<div class="bal">${list.map((n) => `<div class="b"><span>🎈</span>${esc(n)}</div>`).join("")}</div>`;
+    const els = [...play.querySelectorAll(".b")], alive = list.map((_, i) => i).filter((i) => list[i] !== winner);
+    await sleep(600);
+    while (alive.length) {
+      const i = alive.splice(rnd(alive.length), 1)[0];
+      els[i].classList.add("pop"); els[i].firstChild.textContent = "💥";
+      await sleep(alive.length > 2 ? 380 : 1000); // 마지막 세 개는 천천히
+    }
+    els[list.indexOf(winner)].classList.add("hit");
+    await sleep(1000);
+  },
+  // 스포트라이트: 어두운 무대에서 조명이 이름 사이를 옮겨 다니다 당첨자에게 멈춘다
+  async spot(winner, p) {
+    const list = cast(winner, p, 20);
+    play.innerHTML = `<div class="stage">${list.map((n) => `<div class="s">${esc(n)}</div>`).join("")}</div>`;
+    const els = [...play.querySelectorAll(".s")];
+    let cur = -1;
+    const light = (i) => { if (cur >= 0) els[cur].classList.remove("lit"); cur = i; els[i].classList.add("lit"); };
+    for (let d = 70; d < 520; d *= 1.12) {
+      let i; do { i = rnd(list.length); } while (list.length > 1 && i === cur);
+      light(i); await sleep(d);
+    }
+    light(list.indexOf(winner));
+    await sleep(1000);
+  },
+  // 공 추첨기: 통 안에서 공이 튀다가 당첨 공 하나가 가운데로 나와 커진다
+  async lotto(winner, p) {
+    const list = cast(winner, p, 24), S = Math.min(play.clientWidth, 460), R = S / 2 - 8, br = Math.max(16, R / 7), cx = S / 2, cy = S / 2;
+    play.innerHTML = `<canvas id="lt" width="${S}" height="${S}"></canvas>`;
+    const g = $("lt").getContext("2d"), cols = ["#cf2030", "#1f6feb", "#17a589", "#f2a900", "#8e44ad", "#e67e22"];
+    const balls = list.map((name, i) => ({ name, x: cx + rnd(120) - 60, y: cy + rnd(120) - 60, vx: (rnd(100) - 50) / 8, vy: (rnd(100) - 50) / 8, r: br, c: cols[i % cols.length] }));
+    const w = balls[list.indexOf(winner)], t0 = performance.now();
+    await new Promise((done) => (function f(t) {
+      const e = t - t0;
+      g.clearRect(0, 0, S, S);
+      g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fillStyle = "#f7efe0"; g.fill(); g.lineWidth = 6; g.strokeStyle = "#1b2440"; g.stroke();
+      for (const b of balls) {
+        if (b === w && e > 4000) { // 당첨 공은 가운데로 나오며 커진다
+          b.x += (cx - b.x) * 0.12; b.y += (cy - b.y) * 0.12; b.r = br + Math.min(1, (e - 4000) / 1200) * (R * 0.55 - br);
+          continue;
+        }
+        b.vx += (Math.random() - 0.5) * 0.9; b.vy += (Math.random() - 0.5) * 0.9; // 바람에 날리는 느낌
+        const sp = Math.hypot(b.vx, b.vy); if (sp > 7) { b.vx *= 7 / sp; b.vy *= 7 / sp; }
+        b.x += b.vx; b.y += b.vy;
+        const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy);
+        if (d > R - br) { const nx = dx / d, ny = dy / d, dot = b.vx * nx + b.vy * ny; b.vx -= 2 * dot * nx; b.vy -= 2 * dot * ny; b.x = cx + nx * (R - br); b.y = cy + ny * (R - br); }
+      }
+      for (const b of [...balls.filter((x) => x !== w), w]) { // 당첨 공을 맨 위에 그린다
+        g.beginPath(); g.arc(b.x, b.y, b.r, 0, Math.PI * 2); g.fillStyle = b.c; g.fill();
+        g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `800 ${Math.round(b.r * 0.55)}px sans-serif`;
+        g.fillText(b.name.slice(0, b.r > br ? 8 : 3), b.x, b.y);
+      }
+      e < 5800 ? requestAnimationFrame(f) : done();
+    })(t0));
+  },
 };
 
 async function go() {
@@ -184,6 +309,7 @@ async function go() {
 function close(won) {
   out.add(current); // 확정이든 부재든 다시 뽑히지 않게 제외
   if (won) wins.push({ prize: prizeNow(), name: current });
+  keep();
   $("winner").classList.remove("on");
   refresh();
   if (!won) go();
@@ -196,6 +322,10 @@ $("modes").onclick = (e) => {
   const b = e.target.closest("button"); if (!b || busy) return;
   mode = b.dataset.m;
   document.querySelectorAll("#modes button").forEach((x) => x.classList.toggle("on", x === b));
+};
+$("clear").onclick = () => {
+  if (!confirm("당첨 기록을 지우고 모든 참가자를 다시 추첨 대상으로 넣을까요?")) return;
+  out = new Set(); wins = []; keep(); refresh();
 };
 $("copy").onclick = () => navigator.clipboard.writeText(wins.map((w, i) => `${w.prize || i + 1 + "번째"}\t${w.name}`).join("\n")).then(() => ($("copy").textContent = "✔ 복사됨"));
 document.addEventListener("keydown", (e) => {

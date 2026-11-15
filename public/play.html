@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>팀한판 — 참가</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { overscroll-behavior: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+  #app { min-height: 100dvh; display: flex; flex-direction: column; padding: 16px; gap: 14px; }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  header .brand { font-size: 22px; }
+  #me { font-weight: 800; padding: 4px 12px; border-radius: 999px; background: var(--tc, var(--line)); color: #fff; font-size: 14px; }
+  #me:empty { display: none; }
+  #view { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; text-align: center; }
+  h2 { font-size: 28px; }
+  .big { font-size: 96px; font-weight: 900; line-height: 1; color: var(--red); font-variant-numeric: tabular-nums; }
+  .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .teams button { padding: 20px 8px; border-radius: 16px; background: var(--tc); color: #fff; font-size: 20px; font-weight: 900; box-shadow: 0 4px 0 rgba(0, 0, 0, .25); }
+  .pad { flex: 1; min-height: 46dvh; border-radius: 28px; background: var(--tc, var(--red)); color: #fff; font-size: 34px; font-weight: 900; box-shadow: 0 8px 0 rgba(0, 0, 0, .25); display: grid; place-items: center; }
+  .pad:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0, 0, 0, .25); }
+  .pad[disabled] { opacity: .45; }
+  .choices { display: grid; gap: 10px; }
+  .choices button { padding: 18px 14px; border-radius: 16px; border: 2px solid var(--ink); background: var(--card); font-size: 19px; font-weight: 800; text-align: left; }
+  .choices button.mine { background: #ffe9a8; }
+  .choices button.ok { background: #c9f2e3; border-color: var(--mint); }
+  .choices button.no { opacity: .4; }
+  #net { font-size: 13px; color: var(--red); font-weight: 700; text-align: center; min-height: 18px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><span class="brand">팀<b>한판</b></span><span id="me"></span></header>
+  <div id="view"><p class="muted">연결 중…</p></div>
+  <div id="net"></div>
+</div>
+<script src="/play.js"></script>
+</body>
+</html>

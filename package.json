@@ -1,0 +1,10 @@
+{
+  "name": "team-hanpan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QR로 접속하는 팀 대항 미니게임 (행사 진행용)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.19.2", "qrcode": "^1.5.4", "ws": "^8.18.0" }
+}

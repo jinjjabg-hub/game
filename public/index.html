@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>팀한판 — 폰으로 하는 팀 대항 게임</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  main { max-width: 860px; margin: 0 auto; padding: 48px 20px; }
+  .brand { font-size: 44px; text-align: center; }
+  .lead { text-align: center; color: var(--soft); font-weight: 600; margin: 6px 0 36px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .card h2 { font-size: 26px; margin: 8px 0 6px; }
+  .card .ico { font-size: 44px; }
+  .card p { color: var(--soft); font-weight: 500; min-height: 72px; }
+  .card .btn { margin-top: 14px; width: 100%; }
+  #resume { margin-top: 12px; font-size: 14px; }
+  #resume a { color: var(--red); font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="brand">팀<b>한판</b></h1>
+  <p class="lead">오늘은 무엇을 진행할까요?</p>
+  <div class="grid">
+    <section class="card">
+      <div class="ico">🏁</div>
+      <h2>팀 대항 게임</h2>
+      <p>참가자가 폰으로 QR을 찍고 팀을 골라 겨뤄요. 큰 화면에 점수와 순위가 실시간으로 떠요.</p>
+      <button class="btn red" id="new">새 행사 시작 →</button>
+      <div id="resume"></div>
+    </section>
+    <section class="card">
+      <div class="ico">🎁</div>
+      <h2>경품 추첨</h2>
+      <p>이름이나 번호만 넣으면 끝. 달리기·돌림판·카드 뒤집기·룰렛 이름판으로 당첨자를 뽑아요.</p>
+      <a class="btn" href="/draw">추첨 열기 →</a>
+    </section>
+  </div>
+</main>
+<script>
+// 진행자 열쇠는 이 브라우저에만 저장 → 노트북이 꺼져도 같은 브라우저로 이어서 진행
+const KEY = "hanpan_rooms";
+const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+const codes = Object.keys(saved);
+if (codes.length) {
+  const last = codes[codes.length - 1];
+  document.getElementById("resume").innerHTML = `진행하던 행사가 있어요 · <a href="/host?r=${last}">이어서 진행 (${last})</a>`;
+}
+document.getElementById("new").onclick = async () => {
+  const r = await (await fetch("/api/room", { method: "POST" })).json();
+  saved[r.code] = r.key;
+  localStorage.setItem(KEY, JSON.stringify(saved));
+  location.href = "/host?r=" + r.code;
+};
+</script>
+</body>
+</html>

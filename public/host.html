@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>팀한판 — 진행 화면</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { overflow: hidden; }
+  #app { height: 100vh; display: flex; flex-direction: column; padding: 2.2vh 2.4vw; gap: 2vh; }
+  header { display: flex; align-items: center; gap: 16px; }
+  header .brand { font-size: 3.4vh; }
+  header .sp { flex: 1; }
+  #stage { flex: 1; min-height: 0; display: flex; gap: 2vw; }
+  .hint { font-size: 1.8vh; color: var(--soft); font-weight: 700; }
+  kbd { background: var(--ink); color: #fff; border-radius: 6px; padding: 1px 8px; font: inherit; }
+
+  /* 대기실 */
+  .join { width: 26vw; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1vh; }
+  .join img { width: 100%; max-width: 34vh; border: 2px solid var(--ink); border-radius: 14px; }
+  .join .code { font-size: 4.4vh; font-weight: 900; letter-spacing: .12em; color: var(--red); }
+  .join .url { font-size: 1.7vh; color: var(--soft); word-break: break-all; }
+  .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2vh; }
+  .games { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.6vh; }
+  .game { text-align: left; background: var(--card); border: 2px solid var(--ink); border-radius: 18px; padding: 2vh 1.4vw; display: flex; gap: 1vw; align-items: center; box-shadow: 0 5px 0 var(--ink); }
+  .game:hover, .game.sel { background: #ffe9a8; }
+  .game .ico { font-size: 5vh; }
+  .game b { font-size: 2.8vh; display: block; }
+  .game small { font-size: 1.7vh; color: var(--soft); font-weight: 600; }
+  .game .num { margin-left: auto; font-weight: 900; color: var(--soft); font-size: 2vh; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+  .board { width: 24vw; overflow: auto; }
+  .board h3 { font-size: 2.4vh; margin-bottom: 1vh; }
+  .trow { display: flex; align-items: center; gap: 8px; padding: .9vh 0; border-bottom: 1px solid var(--line); font-size: 2.1vh; font-weight: 800; }
+  .trow .dot { width: 1.6vh; height: 1.6vh; border-radius: 50%; background: var(--tc); flex: none; }
+  .trow .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trow .ph { font-size: 1.5vh; color: var(--soft); font-weight: 600; }
+  .trow .adj { opacity: 0; font-size: 1.6vh; padding: 0 6px; border: 1px solid var(--line); border-radius: 6px; }
+  .trow:hover .adj { opacity: 1; }
+
+  /* 카운트다운·진행 */
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .count { font-size: 34vh; font-weight: 900; color: var(--red); line-height: 1; }
+  .title { font-size: 5vh; font-weight: 900; }
+  .race { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.2vh; }
+  .race .top { display: flex; align-items: baseline; gap: 1vw; }
+  .race .timer { margin-left: auto; font-size: 6vh; font-weight: 900; color: var(--red); font-variant-numeric: tabular-nums; }
+  .bars { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1vh; justify-content: center; }
+  .bar { display: flex; align-items: center; gap: 1vw; height: min(8vh, calc(70vh / var(--n))); }
+  .bar .nm { width: 14vw; font-size: min(3vh, calc(26vh / var(--n))); font-weight: 900; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .track { flex: 1; height: 100%; background: #f1e7d3; border-radius: 12px; overflow: hidden; }
+  .bar .fill { height: 100%; width: 0; background: var(--tc); border-radius: 12px; transition: width .25s linear; }
+  .bar .val { width: 9vw; font-size: min(3.4vh, calc(28vh / var(--n))); font-weight: 900; font-variant-numeric: tabular-nums; }
+
+  /* 퀴즈 */
+  .quiz { flex: 1; display: flex; flex-direction: column; gap: 2vh; }
+  .quiz .q { font-size: 5.4vh; font-weight: 900; }
+  .quiz .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6vh; flex: 1; }
+  .quiz .ch { border: 2px solid var(--ink); border-radius: 18px; background: var(--card); font-size: 4vh; font-weight: 800; display: flex; align-items: center; padding: 0 2vw; gap: 1vw; }
+  .quiz .ch i { font-style: normal; background: var(--ink); color: #fff; border-radius: 10px; width: 5.4vh; height: 5.4vh; display: grid; place-items: center; flex: none; }
+  .quiz .ch.ok { background: #c9f2e3; border-color: var(--mint); }
+  .quiz .ch.no { opacity: .35; }
+
+  /* 결과·최종 */
+  .result { flex: 1; display: flex; flex-direction: column; gap: 1vh; justify-content: center; max-width: 70vw; margin: 0 auto; width: 100%; }
+  .rrow { display: flex; align-items: center; gap: 1.4vw; background: var(--card); border: 2px solid var(--ink); border-left: 1.2vw solid var(--tc); border-radius: 16px; padding: 1.2vh 1.6vw; font-size: min(3.6vh, calc(34vh / var(--n))); font-weight: 900; }
+  .rrow .rk { width: 5vw; }
+  .rrow .nm { flex: 1; }
+  .rrow .dt { color: var(--soft); font-size: .7em; }
+  .rrow .pt { color: var(--red); }
+  .rrow.hid { visibility: hidden; }
+  .rrow.win { background: #ffe9a8; transform: scale(1.04); }
+  #fx { position: fixed; inset: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="brand" href="/" style="text-decoration:none;color:inherit">팀<b>한판</b></a>
+    <span class="hint" id="hint"></span>
+    <span class="sp"></span>
+    <span class="hint" id="net"></span>
+  </header>
+  <div id="stage"></div>
+</div>
+<canvas id="fx"></canvas>
+
+<dialog id="dlgTeams">
+  <h3>팀 설정</h3>
+  <p class="muted">한 줄에 팀 이름 하나씩 (최대 20팀). 기존 점수는 줄 순서대로 유지돼요.</p>
+  <textarea id="taTeams"></textarea>
+  <div class="row"><button class="btn line small" data-close>취소</button><button class="btn small" id="saveTeams">저장</button></div>
+</dialog>
+<dialog id="dlgQuiz">
+  <h3>퀴즈 문제 편집</h3>
+  <p class="muted">한 줄에 한 문제: <b>질문 | 보기1 | 보기2 | 보기3 | 보기4 | 정답번호</b></p>
+  <textarea id="taQuiz"></textarea>
+  <div class="row"><button class="btn line small" data-close>취소</button><button class="btn small" id="saveQuiz">저장</button></div>
+</dialog>
+<script src="/host.js"></script>
+</body>
+</html>

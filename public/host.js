@@ -24,7 +24,7 @@ function connect() {
   ws.onopen = () => { $("net").textContent = ""; send({ t: "host", code, key }); };
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
-    if (m.t === "error") { stage.innerHTML = `<div class="center"><div class="title">${esc(m.error)}</div><p><a class="btn" href="/">처음으로</a></p></div>`; ws.onclose = null; return; }
+    if (m.t === "error") { stage.innerHTML = `<div class="center"><div class="title">${esc(m.error)}</div><p><a class="btn" href="./">처음으로</a></p></div>`; ws.onclose = null; return; }
     offset = m.now - Date.now();
     st = m;
     render();
@@ -65,7 +65,7 @@ function lobby() {
   return `
   <aside class="card join">
     <h3 style="font-size:2.6vh">📱 폰으로 QR 찍고 입장</h3>
-    <img src="/qr.svg?r=${code}" alt="참가 QR">
+    <img src="qr.svg?r=${code}" alt="참가 QR">
     <div class="code">${code.toUpperCase()}</div>
     <div class="url">${esc(url)}</div>
   </aside>
@@ -78,7 +78,7 @@ function lobby() {
       <button class="btn line small" id="bTeams">👥 팀 설정</button>
       <button class="btn line small" id="bQuiz">✏️ 퀴즈 문제 편집</button>
       <button class="btn line small" id="bReset">↺ 점수 초기화</button>
-      <a class="btn line small" href="/draw" target="_blank">🎁 경품 추첨</a>
+      <a class="btn line small" href="draw.html" target="_blank">🎁 경품 추첨</a>
       <button class="btn red small" id="bFinal" style="margin-left:auto">🏆 최종 발표</button>
     </div>
   </section>
@@ -244,5 +244,5 @@ function confetti() {
   })(t0);
 }
 
-if (!key) stage.innerHTML = `<div class="center"><div class="title">이 브라우저에는 진행 권한이 없어요</div><p class="muted" style="margin:12px">행사를 만든 브라우저에서 열어 주세요.</p><a class="btn" href="/">처음으로</a></div>`;
+if (!key) stage.innerHTML = `<div class="center"><div class="title">이 브라우저에는 진행 권한이 없어요</div><p class="muted" style="margin:12px">행사를 만든 브라우저에서 열어 주세요.</p><a class="btn" href="./">처음으로</a></div>`;
 else connect();

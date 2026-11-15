@@ -291,6 +291,8 @@ app.set("trust proxy", true);
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
+app.get("/api/ping", (req, res) => res.json({ ok: true }));
+
 app.post("/api/room", (req, res) => {
   const room = createRoom();
   res.json({ code: room.code, key: room.key });

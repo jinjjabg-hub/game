@@ -20,6 +20,11 @@ const GAMES = {
   shake: { dur: 10000, max: 400 },
   stop10: { dur: 20000, max: 20000 },
   quiz: { dur: 0, max: 0 },
+  mole: { dur: 20000, max: 200 },
+  order: { dur: 30000, max: 400 },
+  oddcolor: { dur: 30000, max: 200 },
+  math: { dur: 30000, max: 200 },
+  stroop: { dur: 30000, max: 200 },
 };
 
 const DEFAULT_QUIZ = [

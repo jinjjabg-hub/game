@@ -10,6 +10,11 @@ const GAMES = [
   { id: "shake", ico: "📳", name: "흔들어라", sub: "10초 동안 폰을 힘껏 흔들기" },
   { id: "stop10", ico: "⏱️", name: "딱 10초", sub: "감으로 정확히 10초에 멈추기" },
   { id: "quiz", ico: "💡", name: "BNI 퀴즈", sub: "빨리 맞힐수록 높은 점수" },
+  { id: "mole", ico: "🐹", name: "두더지 잡기", sub: "20초 동안 튀어나온 두더지 터치" },
+  { id: "order", ico: "🔢", name: "숫자 순서", sub: "30초 동안 1부터 차례대로 터치" },
+  { id: "oddcolor", ico: "🎨", name: "다른 색 찾기", sub: "30초 동안 색이 다른 칸 찾기" },
+  { id: "math", ico: "🧮", name: "암산왕", sub: "30초 동안 계산 문제 풀기" },
+  { id: "stroop", ico: "🌈", name: "색깔 함정", sub: "30초 동안 글자의 '색' 고르기" },
 ];
 const gameOf = (id) => GAMES.find((g) => g.id === id) || {};
 
@@ -116,7 +121,7 @@ function boardLive() {
 
 function detail(game, score) {
   if (game === "stop10") return `오차 ${((10000 - score) / 1000).toFixed(2)}초`;
-  return score + (game === "quiz" ? "점" : "회");
+  return score + (game === "tap" || game === "shake" ? "회" : game === "quiz" ? "점" : "개");
 }
 
 function result() {

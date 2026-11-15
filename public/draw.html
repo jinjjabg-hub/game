@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>팀한판 — 경품 추첨</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  #app { min-height: 100vh; display: grid; grid-template-columns: 320px 1fr; gap: 20px; padding: 20px; }
+  @media (max-width: 800px) { #app { grid-template-columns: 1fr; } }
+  aside { display: flex; flex-direction: column; gap: 12px; }
+  aside .brand { font-size: 26px; text-decoration: none; color: inherit; }
+  label { font-weight: 800; font-size: 14px; display: block; }
+  textarea { width: 100%; padding: 10px; font: inherit; font-size: 14px; border: 2px solid var(--line); border-radius: 12px; resize: vertical; margin-top: 4px; }
+  #names { min-height: 150px; } #prizes { min-height: 70px; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .modes button { border: 2px solid var(--ink); border-radius: 12px; padding: 10px 4px; font-weight: 800; background: var(--card); }
+  .modes button.on { background: #ffe9a8; }
+  #wins { font-size: 14px; max-height: 180px; overflow: auto; }
+  #wins div { padding: 4px 0; border-bottom: 1px solid var(--line); }
+  main { display: flex; flex-direction: column; min-height: 80vh; }
+  #top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  #prize { font-size: 28px; font-weight: 900; flex: 1; }
+  #arena { flex: 1; position: relative; display: grid; place-items: center; overflow: hidden; min-height: 420px; }
+  #winner { position: absolute; inset: 0; background: rgba(255, 248, 236, .94); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; z-index: 5; }
+  #winner.on { display: flex; }
+  #winner .who { font-size: clamp(48px, 9vw, 120px); font-weight: 900; color: var(--red); line-height: 1.1; }
+  .roll { font-size: clamp(48px, 9vw, 120px); font-weight: 900; }
+  .lane { position: relative; height: 46px; border-bottom: 2px dashed var(--line); width: 100%; }
+  .lane span { position: absolute; left: 0; top: 4px; white-space: nowrap; font-weight: 800; font-size: 20px; }
+  #race { width: 100%; padding-right: 150px; border-right: 6px solid var(--red); }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
+  .cardx { aspect-ratio: 3/2; border-radius: 16px; border: 2px solid var(--ink); background: var(--ink); color: #fff; font-size: 34px; font-weight: 900; display: grid; place-items: center; transition: transform .3s; padding: 6px; text-align: center; }
+  .cardx.open { background: var(--card); color: var(--soft); font-size: 18px; transform: rotateY(360deg); }
+  .cardx.hit { background: #ffe9a8; color: var(--red); font-size: 26px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <a class="brand" href="/">팀<b>한판</b> · 경품 추첨</a>
+    <label>참가자 (한 줄에 한 명, 또는 <b>1-100</b>처럼 번호 범위)
+      <textarea id="names" placeholder="김대표&#10;이대표&#10;또는 1-100"></textarea></label>
+    <label>경품 (위에서부터 차례로 뽑아요 · 비워도 됨)
+      <textarea id="prizes" placeholder="3등 커피 쿠폰&#10;2등 상품권&#10;1등 에어팟"></textarea></label>
+    <label>추첨 방식</label>
+    <div class="modes" id="modes">
+      <button data-m="roll" class="on">🎰 이름 룰렛</button><button data-m="race">🏃 달리기 경주</button>
+      <button data-m="wheel">🎡 돌림판</button><button data-m="cards">🃏 카드 뒤집기</button>
+    </div>
+    <div class="muted" id="left" style="font-size:14px;font-weight:700"></div>
+    <label>당첨자 <button class="btn line small" id="copy" style="float:right">📋 복사</button></label>
+    <div id="wins" class="muted">아직 없어요</div>
+  </aside>
+  <main>
+    <div id="top"><div id="prize"></div><button class="btn red" id="go">추첨 시작 (Space)</button></div>
+    <div id="arena" class="card">
+      <div id="play" style="width:100%;display:grid;place-items:center"><p class="muted">참가자를 넣고 추첨 시작을 눌러 주세요</p></div>
+      <div id="winner">
+        <div id="wprize" class="muted" style="font-size:24px;font-weight:800"></div>
+        <div class="who" id="who"></div>
+        <div><button class="btn" id="ok">✔ 당첨 확정</button> <button class="btn line" id="redo">자리에 없음 · 다시 뽑기</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const play = $("play");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const rnd = (n) => crypto.getRandomValues(new Uint32Array(1))[0] % n; // 당첨자는 암호학적 난수로 공정하게
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let mode = "roll", busy = false, current = null;
+let out = new Set();   // 당첨됐거나 자리에 없어 제외된 사람
+let wins = [];         // [{prize, name}]
+
+// 입력값은 이 브라우저에 저장 → 새로고침해도 유지
+for (const id of ["names", "prizes"]) {
+  $(id).value = localStorage.getItem("hanpan_draw_" + id) || "";
+  $(id).oninput = () => { localStorage.setItem("hanpan_draw_" + id, $(id).value); refresh(); };
+}
+
+function entries() {
+  const list = [];
+  for (const line of $("names").value.split("\n")) {
+    const s = line.trim(); if (!s) continue;
+    const m = s.match(/^(\d+)\s*[-~]\s*(\d+)$/);
+    if (m && +m[2] >= +m[1] && +m[2] - +m[1] < 2000) for (let i = +m[1]; i <= +m[2]; i++) list.push(String(i));
+    else list.push(s);
+  }
+  return [...new Set(list)];
+}
+const pool = () => entries().filter((n) => !out.has(n));
+const prizeNow = () => $("prizes").value.split("\n").map((s) => s.trim()).filter(Boolean)[wins.length] || "";
+
+function refresh() {
+  $("left").textContent = `남은 인원 ${pool().length}명 / 전체 ${entries().length}명`;
+  $("prize").textContent = prizeNow() ? "🎁 " + prizeNow() : `🎁 ${wins.length + 1}번째 추첨`;
+  $("wins").innerHTML = wins.length ? wins.map((w, i) => `<div><b>${esc(w.prize || i + 1 + "번째")}</b> — ${esc(w.name)}</div>`).join("") : "아직 없어요";
+}
+
+// 화면에 함께 등장할 사람들: 당첨자 + 무작위 들러리 (섞어서)
+function cast(winner, p, n) {
+  const others = p.filter((x) => x !== winner);
+  for (let i = others.length - 1; i > 0; i--) { const j = rnd(i + 1); [others[i], others[j]] = [others[j], others[i]]; }
+  const list = others.slice(0, n - 1);
+  list.splice(rnd(list.length + 1), 0, winner);
+  return list;
+}
+
+const SHOWS = {
+  // 이름이 빠르게 돌다가 점점 느려지며 멈춘다
+  async roll(winner, p) {
+    play.innerHTML = `<div class="roll" id="rl"></div>`;
+    for (let i = 0, d = 40; d < 420; i++, d *= 1.09) { $("rl").textContent = p[rnd(p.length)]; await sleep(d); }
+    $("rl").textContent = winner; await sleep(700);
+  },
+  // 최대 8명이 달리고, 결승선에 먼저 닿는 사람이 당첨
+  async race(winner, p) {
+    const runners = cast(winner, p, 8), icons = ["🏃", "🚴", "🏇", "🛼", "🏄", "🚣", "⛷️", "🏊"];
+    play.innerHTML = `<div id="race">${runners.map((n, i) => `<div class="lane"><span>${icons[i]} ${esc(n)}</span></div>`).join("")}</div>`;
+    const els = [...play.querySelectorAll(".lane span")], W = $("race").clientWidth;
+    const plan = runners.map((n) => ({ T: n === winner ? 5200 : 5600 + rnd(1800), k: 0.6 + rnd(90) / 100 })); // k가 달라 중간 순위가 계속 뒤바뀐다
+    const t0 = performance.now();
+    await new Promise((done) => (function f(t) {
+      const e = t - t0;
+      els.forEach((el, i) => (el.style.transform = `translateX(${Math.min(1, Math.pow(e / plan[i].T, plan[i].k)) * W}px)`));
+      e < 5200 ? requestAnimationFrame(f) : done();
+    })(t0));
+    await sleep(500);
+  },
+  // 돌림판: 최대 24칸, 위쪽 화살표에 멈춘 칸이 당첨
+  async wheel(winner, p) {
+    const seg = cast(winner, p, 24), n = seg.length, size = Math.min(play.clientWidth, 520);
+    play.innerHTML = `<div style="position:relative"><div style="position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:34px;z-index:2">🔻</div><canvas id="wh" width="${size}" height="${size}"></canvas></div>`;
+    const cv = $("wh"), g = cv.getContext("2d"), R = size / 2, cols = ["#cf2030", "#1f6feb", "#17a589", "#f2a900", "#8e44ad", "#e67e22"];
+    const a = (Math.PI * 2) / n;
+    // 당첨 칸의 가운데가 정확히 위(-90°)에 오도록 최종 각도를 정한다
+    const end = Math.PI * 2 * 6 - Math.PI / 2 - (seg.indexOf(winner) + 0.5) * a, t0 = performance.now(), D = 5500;
+    function paint(rot) {
+      g.clearRect(0, 0, size, size);
+      seg.forEach((name, i) => {
+        g.beginPath(); g.moveTo(R, R); g.arc(R, R, R - 4, rot + i * a, rot + (i + 1) * a); g.closePath();
+        g.fillStyle = cols[i % cols.length]; g.fill();
+        g.save(); g.translate(R, R); g.rotate(rot + (i + 0.5) * a); g.fillStyle = "#fff"; g.font = `800 ${Math.max(11, Math.min(20, 260 / n))}px sans-serif`;
+        g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(name.slice(0, 8), R - 14, 0); g.restore();
+      });
+    }
+    await new Promise((done) => (function f(t) {
+      const x = Math.min(1, (t - t0) / D);
+      paint(end * (1 - Math.pow(1 - x, 3)));
+      x < 1 ? requestAnimationFrame(f) : done();
+    })(t0));
+    await sleep(700);
+  },
+  // 카드 12장 중 진행자가 한 장을 고르면 그 카드에서 당첨자가 나온다
+  async cards(winner, p) {
+    const rest = cast(winner, p, 12).filter((x) => x !== winner);
+    play.innerHTML = `<div class="cards">${Array.from({ length: rest.length + 1 }, () => `<button class="cardx">?</button>`).join("")}</div>`;
+    const cards = [...play.querySelectorAll(".cardx")];
+    const picked = await new Promise((ok) => cards.forEach((c) => (c.onclick = () => ok(c))));
+    cards.forEach((c) => (c.onclick = null));
+    picked.textContent = winner; picked.classList.add("open", "hit");
+    await sleep(900);
+    cards.filter((c) => c !== picked).forEach((c, i) => { c.textContent = rest[i]; c.classList.add("open"); });
+    await sleep(1200);
+  },
+};
+
+async function go() {
+  if (busy || $("winner").classList.contains("on")) return;
+  const p = pool();
+  if (!p.length) return alert("추첨할 참가자가 없어요. 왼쪽에 이름이나 번호를 넣어 주세요.");
+  busy = true; $("go").disabled = true;
+  current = p[rnd(p.length)];
+  await SHOWS[mode](current, p);
+  $("wprize").textContent = prizeNow() || `${wins.length + 1}번째 당첨`;
+  $("who").textContent = current;
+  $("winner").classList.add("on");
+  busy = false; $("go").disabled = false;
+}
+
+function close(won) {
+  out.add(current); // 확정이든 부재든 다시 뽑히지 않게 제외
+  if (won) wins.push({ prize: prizeNow(), name: current });
+  $("winner").classList.remove("on");
+  refresh();
+  if (!won) go();
+}
+
+$("go").onclick = go;
+$("ok").onclick = () => close(true);
+$("redo").onclick = () => close(false);
+$("modes").onclick = (e) => {
+  const b = e.target.closest("button"); if (!b || busy) return;
+  mode = b.dataset.m;
+  document.querySelectorAll("#modes button").forEach((x) => x.classList.toggle("on", x === b));
+};
+$("copy").onclick = () => navigator.clipboard.writeText(wins.map((w, i) => `${w.prize || i + 1 + "번째"}\t${w.name}`).join("\n")).then(() => ($("copy").textContent = "✔ 복사됨"));
+document.addEventListener("keydown", (e) => {
+  if (e.code !== "Space" || /TEXTAREA|BUTTON/.test(e.target.tagName)) return;
+  e.preventDefault();
+  $("winner").classList.contains("on") ? close(true) : go();
+});
+refresh();
+</script>
+</body>
+</html>

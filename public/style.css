@@ -1,0 +1,38 @@
+/* 팀한판 공통 스타일 — 밝은 종이 바탕 + 남색 잉크 + 빨강 포인트 */
+:root {
+  --paper: #fff8ec; --card: #ffffff; --ink: #1b2440; --soft: #5b6480; --line: #e6dcc8;
+  --red: #cf2030; --mint: #17a589; --gold: #f2a900;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  background: var(--paper); color: var(--ink); line-height: 1.5; word-break: keep-all;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+.btn {
+  display: inline-block; padding: 12px 20px; border-radius: 14px; font-weight: 800; font-size: 17px;
+  background: var(--ink); color: #fff; text-decoration: none; text-align: center;
+  box-shadow: 0 4px 0 rgba(27, 36, 64, .25); transition: transform .08s;
+}
+.btn:active { transform: translateY(2px); }
+.btn.red { background: var(--red); }
+.btn.line { background: var(--card); color: var(--ink); border: 2px solid var(--ink); box-shadow: none; }
+.btn.small { padding: 7px 12px; font-size: 14px; border-radius: 10px; }
+.card { background: var(--card); border: 2px solid var(--ink); border-radius: 20px; padding: 22px; }
+.muted { color: var(--soft); }
+.brand { font-weight: 900; letter-spacing: -.04em; }
+.brand b { color: var(--red); }
+h1, h2, h3 { letter-spacing: -.03em; line-height: 1.25; }
+
+dialog { border: 2px solid var(--ink); border-radius: 20px; padding: 24px; margin: auto; width: min(640px, 92vw); color: var(--ink); background: var(--card); }
+dialog::backdrop { background: rgba(27, 36, 64, .55); }
+dialog h3 { font-size: 22px; margin-bottom: 6px; }
+dialog textarea { width: 100%; min-height: 240px; margin: 12px 0; padding: 12px; font: inherit; font-size: 15px; border: 2px solid var(--line); border-radius: 12px; resize: vertical; }
+dialog .row { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* 팀 색 (12색 순환) */
+.c0 { --tc: #cf2030; } .c1 { --tc: #1f6feb; } .c2 { --tc: #17a589; } .c3 { --tc: #f2a900; }
+.c4 { --tc: #8e44ad; } .c5 { --tc: #e67e22; } .c6 { --tc: #0e9aa7; } .c7 { --tc: #d63384; }
+.c8 { --tc: #5d7a1f; } .c9 { --tc: #6f42c1; } .c10 { --tc: #b5651d; } .c11 { --tc: #475569; }

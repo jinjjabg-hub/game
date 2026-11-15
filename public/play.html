@@ -25,6 +25,16 @@
   .choices button.mine { background: #ffe9a8; }
   .choices button.ok { background: #c9f2e3; border-color: var(--mint); }
   .choices button.no { opacity: .4; }
+  .bar2 { display: flex; justify-content: space-between; font-weight: 900; font-size: 20px; }
+  #mini { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+  .cells { display: grid; gap: 8px; grid-template-columns: repeat(var(--k), 1fr); }
+  .cell { aspect-ratio: 1; border-radius: 14px; background: #f1e7d3; font-size: 26px; font-weight: 900; display: grid; place-items: center; }
+  .cell.on { background: #ffe9a8; font-size: 44px; }
+  .cell.done { opacity: .25; }
+  .cell.bad, .opt.bad { background: #ffc9c9; }
+  .ask { font-size: 54px; font-weight: 900; line-height: 1.2; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opt { padding: 22px 8px; border-radius: 16px; border: 2px solid var(--ink); background: var(--card); font-size: 26px; font-weight: 900; }
   #net { font-size: 13px; color: var(--red); font-weight: 700; text-align: center; min-height: 18px; }
 </style>
 </head>
